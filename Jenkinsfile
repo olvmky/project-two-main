@@ -1,7 +1,7 @@
 pipeline {
   environment {
         registry = 'olvmky/project-two-main'
-        dockerHubCreds = 'docker_token'
+        dockerHubCreds = 'docker_hub'
         dockerImage = ''
 //         deploymentFile = 'k8s/deployment.yml'
   }
