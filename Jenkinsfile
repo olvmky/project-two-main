@@ -1,9 +1,9 @@
 pipeline {
   environment {
         registry = 'olvmky/project-two-main'
-        dockerHubCreds = 'docker_hub'
+        dockerHubCreds = 'docker_token'
         dockerImage = ''
-        deploymentFile = 'k8s/deployment.yml'
+//         deploymentFile = 'k8s/deployment.yml'
   }
 
   agent any
