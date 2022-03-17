@@ -1,6 +1,6 @@
 pipeline {
   environment {
-        registry = 'olvmky/email-api'
+        registry = 'olvmky/project-two-main'
         dockerHubCreds = 'docker_hub'
         dockerImage = ''
         deploymentFile = 'k8s/deployment.yml'

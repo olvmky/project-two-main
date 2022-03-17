@@ -1,33 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: project-management-dep
+  name: main-api-deployment
   labels:
-    app: project-management-api
+    app: project2-main-api
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: project-management-api
+      app: project2-main-api
   template:
     metadata:
       labels:
-        app: project-management-api
+        app: project2-main-api
     spec:
       containers:
-        - image: mohammedyb/pmapi
+        - image: olvmky/project-two-main
           imagePullPolicy: Always
-          name: project-management-api
+          name: project2-main-api
           ports:
             - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: pm-service
+  name: main-api-service
 spec:
   selector:
-    app: project-management-api
+    app: project2-main-api
   type: LoadBalancer
   ports:
     - port: 8080
