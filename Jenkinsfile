@@ -1,101 +1,73 @@
 pipeline {
-    environment {
-        registry = 'mohammedyb/pmapi'
+  environment {
+        registry = 'olvmky/email-api'
         dockerHubCreds = 'docker_hub'
         dockerImage = ''
-        deploymentFile = 'ProjectManagementAPI/k8s/deployment.yml'
-    }
-    agent any
-    stages {
-        stage('Test') {
-            when {
-                branch 'feature/*'
-            }
-        steps {
-            withMaven {
-                cleanWs()
-                sh 'mvn test'
-            }
+        deploymentFile = 'k8s/deployment.yml'
+  }
+
+  agent any
+  stages {
+    stage('Test') {
+      steps {
+        withMaven {
+            sh 'mvn -f pom.xml test'
         }
+      }
     }
+
     stage('Build') {
-        when {
-            branch 'main'
-        }
-        steps {
+
+          steps {
             withMaven {
-                sh 'mvn -f ProjectManagementAPI/pom.xml clean install'
-                sh 'mvn -f ProjectManagementAPI/pom.xml clean package -DskipTests'
+              sh 'mvn -f pom.xml clean install'
+              sh 'mvn -f pom.xml clean package -DskipTests'
             }
-        }
+          }
     }
+
     stage('Docker Build') {
-        when {
-            branch 'main'
-        }
-        steps {
-            script {
-                echo "$registry:$currentBuild.number"
-                dockerImage = docker.build ("$registry", "-f ProjectManagementAPI/Dockerfile .")
-            }
-        }
+
+           steps {
+               script {
+                  echo "$registry:$currentBuild.number"
+                  dockerImage = docker.build ("$registry", "-f Dockerfile .")
+               }
+           }
     }
+
     stage('Docker Deliver') {
-        when {
-            branch 'main'
-        }
-        steps {
-            script {
-                docker.withRegistry('', dockerHubCreds) {
-                    dockerImage.push("$currentBuild.number")
-                    dockerImage.push("latest")
-                }
-            }
-        }
-    }
-    stage('Wait for approval') {
-        when {
-            branch 'main'
-        }
-        steps {
-            script {
-                try {
-                    timeout(time: 1, unit: 'MINUTES') {
-                        approved = input message: 'Deploy to production?', ok: 'Continue',
-                            parameters: [choice(name: 'approved', choices: 'Yes\nNo', description: 'Deploy build to production')]
-                        if(approved != 'Yes') {
-                            error('Build did not pass approval')
-                        }
-                    }
-                } catch(error) {
-                    error('Build failed because timeout was exceeded')
-                }
-            }
-        }
-    }
-    stage('Deploy to GKE') {
-        when {
-            branch 'main'
-        }
-        steps{
-            sh 'sed -i "s/%TAG%/$BUILD_NUMBER/g" ./ProjectManagementAPI/k8s/deployment.yml'
-            sh 'cat ./ProjectManagementAPI/k8s/deployment.yml'
-            step([$class: 'KubernetesEngineBuilder',
-                projectId: 'spherical-gate-338602',
-                clusterName: 'spherical-gate-338602-gke',
-                zone: 'us-central1',
-                manifestPattern: 'ProjectManagementAPI/k8s/',
-                credentialsId: 'spherical-gate-338602',
-                verifyDeployments: true
-            ])
 
-            cleanWs()
-
-            discordSend description: "Build #$currentBuild.number",
-                link: BUILD_URL, result: currentBuild.currentResult,
-                title: JOB_NAME,
-                webhookURL: "https://discord.com/api/webhooks/950640331618127933/BBv5vrZLc39Bs0IkXYXWSadLqryAHWOIvVEvkMeA25lO28vhoeccnNVlF2pPnVM_Yg0o"
-            }
+      steps {
+        script {
+          docker.withRegistry('',dockerHubCreds) {
+                    dockerImage.push()
+          }
         }
+      }
+    }
+//
+//     stage('Deploy to GKE') {
+//
+//             steps{
+//                sh 'sed -i "s/%TAG%/$BUILD_NUMBER/g" ./k8s/deployment.yml'
+//                sh 'cat ./k8s/deployment.yml'
+//                step([$class: 'KubernetesEngineBuilder',
+//                     projectId: 'active-road-343813',
+//                     clusterName: 'active-road-343813-gke',
+//                     zone: 'us-central1',
+//                     manifestPattern: 'k8s/',
+//                     credentialsId: 'active-road-343813',
+//                     verifyDeployments: true
+//                ])
+//
+//                cleanWs()
+
+//                discordSend description: "Build #$currentBuild.number",
+//                     link: BUILD_URL, result: currentBuild.currentResult,
+//                     title: JOB_NAME,
+//                     webhookURL: "https://discord.com/api/webhooks/946097550514061343/7IRGxvAsw24cbGPIHXE15gtxCvzQQtRl3e5DEcm7arQpC6x3cVJPXXWZo7UWHKyJumuW"
+//             }
+//             }
     }
 }
